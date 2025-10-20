@@ -1,49 +1,43 @@
-# helper_lib/trainer.py
-import os
 import torch
 from torch import nn, optim
+from tqdm import tqdm
 
-def train_epoch(model, loader, criterion, optimizer, device):
-    model.train()
-    total, correct, loss_sum = 0, 0, 0.0
-    for x, y in loader:
-        x, y = x.to(device), y.to(device)
-        optimizer.zero_grad()
-        logits = model(x)
-        loss = criterion(logits, y)
-        loss.backward()
-        optimizer.step()
-        loss_sum += loss.item() * x.size(0)
-        pred = logits.argmax(1)
-        correct += (pred == y).sum().item()
-        total += x.size(0)
-    return loss_sum / total, correct / total
-
-@torch.no_grad()
-def evaluate(model, loader, criterion, device):
-    model.eval()
-    total, correct, loss_sum = 0, 0, 0.0
-    for x, y in loader:
-        x, y = x.to(device), y.to(device)
-        logits = model(x)
-        loss = criterion(logits, y)
-        loss_sum += loss.item() * x.size(0)
-        pred = logits.argmax(1)
-        correct += (pred == y).sum().item()
-        total += x.size(0)
-    return loss_sum / total, correct / total
-
-def fit(model, train_loader, test_loader, epochs=5, lr=1e-3, out_path="./models/cifar10_cnn.pt"):
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    model = model.to(device)
+def train(
+    model,
+    train_loader,
+    device,
+    epochs: int = 10,
+    lr: float = 1e-3,
+    weight_decay: float = 0.0
+):
+    model.to(device)
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+    optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 
-    for ep in range(1, epochs + 1):
-        tr_loss, tr_acc = train_epoch(model, train_loader, criterion, optimizer, device)
-        te_loss, te_acc = evaluate(model, test_loader, criterion, device)
-        print(f"Epoch {ep:02d} | train {tr_loss:.4f}/{tr_acc:.3f}  test {te_loss:.4f}/{te_acc:.3f}")
+    model.train()
+    for epoch in range(1, epochs + 1):
+        running_loss = 0.0
+        correct = 0
+        total = 0
+        pbar = tqdm(train_loader, desc=f"Epoch {epoch}/{epochs}")
+        for images, labels in pbar:
+            images, labels = images.to(device), labels.to(device)
 
-    os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
-    torch.save({"state_dict": model.state_dict()}, out_path)
-    print("Saved:", out_path)
+            optimizer.zero_grad()
+            logits = model(images)
+            loss = criterion(logits, labels)
+            loss.backward()
+            optimizer.step()
+
+            running_loss += loss.item() * images.size(0)
+            _, preds = logits.max(1)
+            correct += preds.eq(labels).sum().item()
+            total += labels.size(0)
+
+            pbar.set_postfix(loss=f"{loss.item():.4f}", acc=f"{100.0*correct/total:.2f}%")
+
+        epoch_loss = running_loss / total
+        epoch_acc = 100.0 * correct / total
+        print(f"[Train] loss={epoch_loss:.4f} acc={epoch_acc:.2f}%")
+
+    return model
