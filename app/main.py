@@ -11,6 +11,5 @@ def root():
 def health():
     return {"status": "ok"}
 
-# 挂载推理路由
 app.include_router(infer_router)
 
