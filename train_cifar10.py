@@ -3,7 +3,6 @@ from torch import nn, optim
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 
-# --- Model: 简单 CNN ---
 class SimpleCNN(nn.Module):
     def __init__(self, num_classes=10):
         super().__init__()
