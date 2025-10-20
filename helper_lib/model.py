@@ -3,13 +3,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class CNNModel(nn.Module):
-    """CNN per spec: 64x64 RGB -> Conv16 -> Pool -> Conv32 -> Pool -> Flatten -> FC100 -> FC10."""
+    """64x64 RGB -> Conv16 -> ReLU -> MaxPool -> Conv32 -> ReLU -> MaxPool -> Flatten -> FC100 -> ReLU -> FC10"""
     def __init__(self, num_classes: int = 10):
         super().__init__()
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1)
         self.pool  = nn.MaxPool2d(kernel_size=2, stride=2)
-        self.fc1   = nn.Linear(32 * 16 * 16, 100)
+        self.fc1   = nn.Linear(32 * 16 * 16, 100)  # 64->32->16 after two pools
         self.fc2   = nn.Linear(100, num_classes)
 
     def forward(self, x):
