@@ -6,7 +6,7 @@ import torch
 import torch.nn.functional as F
 from torchvision import transforms
 from pathlib import Path
-from functools import lru_cache
+from collections import OrderedDict
 
 from helper_lib.model import SimpleCNN
 from helper_lib.data_loader import cifar10_class_names
@@ -22,17 +22,48 @@ TFM = transforms.Compose([
 
 WEIGHTS_PATH = Path(__file__).resolve().parent.parent / "models" / "cifar10_cnn.pt"
 
-@lru_cache(maxsize=1)
-def load_model() -> tuple[torch.nn.Module, str]:
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    model = SimpleCNN(num_classes=10)
+_model = None
+_device = "cpu"
+
+
+def _strip_prefix(state: dict) -> dict:
+    """remove common prefixes like 'module.' or 'model.'"""
+    out = OrderedDict()
+    for k, v in state.items():
+        if k.startswith("module."):
+            k = k[len("module."):]
+        if k.startswith("model."):
+            k = k[len("model."):]
+        out[k] = v
+    return out
+
+
+def load_model():
+    global _model, _device
+    if _model is not None:
+        return _model, _device
+
     if not WEIGHTS_PATH.exists():
         raise FileNotFoundError(f"Model weights not found at: {WEIGHTS_PATH}")
-    ckpt = torch.load(WEIGHTS_PATH, map_location=device)
-    state_dict = ckpt.get("state_dict", ckpt)
-    model.load_state_dict(state_dict)
-    model.eval().to(device)
-    return model, device
+
+    _device = "cuda" if torch.cuda.is_available() else "cpu"
+    model = SimpleCNN(num_classes=10)
+
+    ckpt = torch.load(WEIGHTS_PATH, map_location=_device)
+    state = ckpt.get("state_dict", ckpt)
+    state = _strip_prefix(state)
+
+    try:
+        # try strict first
+        model.load_state_dict(state, strict=True)
+    except Exception:
+        # fallback: allow missing/unexpected keys (runs, but accuracy may drop if layout differs)
+        model.load_state_dict(state, strict=False)
+
+    model.eval().to(_device)
+    _model = model
+    return _model, _device
+
 
 @torch.no_grad()
 def predict_bytes(img_bytes: bytes) -> Tuple[str, float]:
@@ -43,6 +74,7 @@ def predict_bytes(img_bytes: bytes) -> Tuple[str, float]:
     probs = F.softmax(logits, dim=0)
     score, idx = probs.max(dim=0)
     return cifar10_class_names()[int(idx)], float(score)
+
 
 @router.post("/classify")
 async def classify(file: UploadFile = File(...)):
