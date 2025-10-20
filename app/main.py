@@ -7,4 +7,10 @@ app = FastAPI(title="SPS GenAI - Image Classifier")
 def root():
     return {"message": "OK"}
 
+@app.get("/health", tags=["health"])
+def health():
+    return {"status": "ok"}
+
+# 挂载推理路由
 app.include_router(infer_router)
+
