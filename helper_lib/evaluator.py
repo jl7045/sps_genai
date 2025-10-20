@@ -1,33 +1,21 @@
-import io
 import torch
-from PIL import Image
-from torchvision import transforms
-from .model import CNNModel
-from .data_loader import class_names
-
-_MEAN = (0.4914, 0.4822, 0.4465)
-_STD  = (0.2023, 0.1994, 0.2010)
-
-TFM = transforms.Compose([
-    transforms.Resize((64, 64)),
-    transforms.ToTensor(),
-    transforms.Normalize(_MEAN, _STD),
-])
-
-def load_model(weights_path="./models/cifar10_cnn.pt"):
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    m = CNNModel()
-    ckpt = torch.load(weights_path, map_location=device)
-    m.load_state_dict(ckpt["state_dict"])
-    m.eval().to(device)
-    return m, device
+from torch import nn
 
 @torch.no_grad()
-def predict_bytes(img_bytes: bytes, weights_path="./models/cifar10_cnn.pt"):
-    model, device = load_model(weights_path)
-    img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-    x = TFM(img).unsqueeze(0).to(device)
-    logits = model(x)[0]
-    probs = logits.softmax(dim=0)
-    score, idx = probs.max(dim=0)
-    return class_names()[int(idx)], float(score), logits.tolist()
+def evaluate(model, data_loader, device):
+    model.eval()
+    criterion = nn.CrossEntropyLoss()
+    total_loss, total_correct, total = 0.0, 0, 0
+
+    for images, labels in data_loader:
+        images, labels = images.to(device), labels.to(device)
+        logits = model(images)
+        loss = criterion(logits, labels)
+        total_loss += loss.item() * images.size(0)
+        _, preds = logits.max(1)
+        total_correct += preds.eq(labels).sum().item()
+        total += labels.size(0)
+
+    avg_loss = total_loss / total
+    acc = 100.0 * total_correct / total
+    return avg_loss, acc
