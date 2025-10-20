@@ -1,5 +1,23 @@
+import torch
 import torch.nn as nn
-from torchvision.models import resnet18
-def get_model(model_name):
-#TODO: define and return the appropriate model_name - one of: FCNN, CNN,EnhancedCNN, VAE
-return mode
+import torch.nn.functional as F
+
+class CNNModel(nn.Module):
+    """CNN per spec: 64x64 RGB -> Conv16 -> Pool -> Conv32 -> Pool -> Flatten -> FC100 -> FC10."""
+    def __init__(self, num_classes: int = 10):
+        super().__init__()
+        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1)
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1)
+        self.pool  = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.fc1   = nn.Linear(32 * 16 * 16, 100)
+        self.fc2   = nn.Linear(100, num_classes)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))   # 3x64x64 -> 16x64x64
+        x = self.pool(x)            # -> 16x32x32
+        x = F.relu(self.conv2(x))   # -> 32x32x32
+        x = self.pool(x)            # -> 32x16x16
+        x = torch.flatten(x, 1)     # -> 32*16*16
+        x = F.relu(self.fc1(x))     # -> 100
+        x = self.fc2(x)             # -> 10
+        return x
