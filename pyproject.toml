@@ -1,0 +1,19 @@
+[project]
+name = "sps-genai"
+version = "0.1.0"
+description = "FastAPI CIFAR10 Image Classifier"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "fastapi>=0.111.0",
+  "uvicorn>=0.30.0",
+  "pydantic>=2.7.0",
+  "torch>=2.2.0",
+  "torchvision>=0.17.0",
+  "pillow>=10.0.0",
+  "tqdm>=4.66.0",
+  "python-multipart>=0.0.20",
+]
+
+[tool.uv]
+index-strategy = "unsafe-best-match"
