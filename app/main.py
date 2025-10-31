@@ -10,3 +10,7 @@ def root():
 
 app.include_router(infer_router)
 app.include_router(gan_router)
+<<<<<<< HEAD
+=======
+
+>>>>>>> 5eba60f6627c0b39a9a28073b2ea2c69feffe620

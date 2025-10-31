@@ -11,8 +11,12 @@ dependencies = [
   "torch>=2.2.0",
   "torchvision>=0.17.0",
   "pillow>=10.0.0",
+<<<<<<< HEAD
   "tqdm>=4.66.0",
   "python-multipart>=0.0.20",
+=======
+  "tqdm>=4.66.0"
+>>>>>>> 5eba60f6627c0b39a9a28073b2ea2c69feffe620
 ]
 
 [tool.uv]
