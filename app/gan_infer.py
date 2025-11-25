@@ -7,7 +7,8 @@ from .gan_models import Generator
 
 router = APIRouter(prefix="/gan", tags=["gan"])
 
-MODEL_PATH = "models/gan_generator.pt"
+MODEL_PATH = Path("app/models/gan_generator.pt")
+
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 def load_generator(weights_path=MODEL_PATH):
