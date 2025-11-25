@@ -14,7 +14,7 @@ EPOCHS = 5
 LR = 2e-4
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-MODEL_DIR = "models"
+MODEL_DIR = "app/models"
 GEN_PATH = os.path.join(MODEL_DIR, "gan_generator.pt")
 
 
