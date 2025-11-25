@@ -11,4 +11,5 @@ dependencies = [
     "torch",
     "torchvision",
     "tqdm>=4.66.0",
+    "python-multipart>=0.0.20",
 ]
