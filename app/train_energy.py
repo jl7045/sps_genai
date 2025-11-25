@@ -1,5 +1,6 @@
 import argparse
 import os
+from pathlib import Path
 
 import torch
 import torch.nn as nn
@@ -42,12 +43,12 @@ def train(args):
         num_workers=args.num_workers,
     )
 
-    model = EnergyAutoencoder()
-    model.to(device)
+    model = EnergyAutoencoder().to(device)
 
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
+    # 统一保存到 app/models
     os.makedirs(args.out_dir, exist_ok=True)
     ckpt_path = os.path.join(args.out_dir, "energy_autoencoder_cifar10.pth")
 
@@ -89,7 +90,9 @@ if __name__ == "__main__":
     parser.add_argument("--num_workers", type=int, default=4)
     parser.add_argument("--log_every", type=int, default=100)
     parser.add_argument("--no_cuda", action="store_true")
-    parser.add_argument("--out_dir", type=str, default="./data")
+    # 默认统一到 app/models
+    default_out = Path(__file__).resolve().parent / "models"
+    parser.add_argument("--out_dir", type=str, default=str(default_out))
     args = parser.parse_args()
 
     train(args)

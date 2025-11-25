@@ -1,33 +1,34 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from typing import Tuple
+from pathlib import Path
 from PIL import Image
 import io
 import torch
 import torch.nn.functional as F
 from torchvision import transforms
-from pathlib import Path
 from collections import OrderedDict
 
 from helper_lib.model import SimpleCNN
 from helper_lib.data_loader import cifar10_class_names
 
-router = APIRouter(prefix="/infer", tags=["infer"])
+router = APIRouter(prefix="/infer", tags=["CNN Classifier"])
 
-TFM = transforms.Compose([
-    transforms.Resize((64, 64)),
-    transforms.ToTensor(),
-    transforms.Normalize((0.4914, 0.4822, 0.4465),
-                         (0.2023, 0.1994, 0.2010)),
-])
-
-WEIGHTS_PATH = Path(__file__).resolve().parent.parent / "models" / "cifar10_cnn.pt"
+WEIGHTS_PATH = Path(__file__).resolve().parent / "models" / "cifar10_cnn.pt"
 
 _model = None
 _device = "cpu"
 
+TFM = transforms.Compose([
+    transforms.Resize((64, 64)),
+    transforms.ToTensor(),
+    transforms.Normalize(
+        (0.4914, 0.4822, 0.4465),
+        (0.2023, 0.1994, 0.2010),
+    ),
+])
+
 
 def _strip_prefix(state: dict) -> dict:
-    """remove common prefixes like 'module.' or 'model.'"""
     out = OrderedDict()
     for k, v in state.items():
         if k.startswith("module."):
@@ -40,11 +41,12 @@ def _strip_prefix(state: dict) -> dict:
 
 def load_model():
     global _model, _device
+
     if _model is not None:
         return _model, _device
 
     if not WEIGHTS_PATH.exists():
-        raise FileNotFoundError(f"Model weights not found at: {WEIGHTS_PATH}")
+        raise FileNotFoundError(f"Model weights not found at {WEIGHTS_PATH}")
 
     _device = "cuda" if torch.cuda.is_available() else "cpu"
     model = SimpleCNN(num_classes=10)
@@ -54,10 +56,8 @@ def load_model():
     state = _strip_prefix(state)
 
     try:
-        # try strict first
         model.load_state_dict(state, strict=True)
     except Exception:
-        # fallback: allow missing/unexpected keys (runs, but accuracy may drop if layout differs)
         model.load_state_dict(state, strict=False)
 
     model.eval().to(_device)
@@ -68,11 +68,14 @@ def load_model():
 @torch.no_grad()
 def predict_bytes(img_bytes: bytes) -> Tuple[str, float]:
     model, device = load_model()
+
     img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
     x = TFM(img).unsqueeze(0).to(device)
+
     logits = model(x)[0]
     probs = F.softmax(logits, dim=0)
     score, idx = probs.max(dim=0)
+
     return cifar10_class_names()[int(idx)], float(score)
 
 
@@ -82,7 +85,9 @@ async def classify(file: UploadFile = File(...)):
         img_bytes = await file.read()
         label, score = predict_bytes(img_bytes)
         return {"label": label, "score": score}
+
     except FileNotFoundError as e:
         raise HTTPException(status_code=500, detail=str(e))
+
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

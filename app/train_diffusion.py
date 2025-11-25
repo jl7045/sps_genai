@@ -1,5 +1,6 @@
 import argparse
 import os
+from pathlib import Path
 
 import torch
 from torch.utils.data import DataLoader
@@ -13,7 +14,7 @@ def get_cifar10_dataloader(batch_size=128, num_workers=4):
     transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5),
-                             (0.5, 0.5, 0.5)),  # [0,1] -> [-1,1]
+                             (0.5, 0.5, 0.5)),
     ])
 
     train_dataset = datasets.CIFAR10(
@@ -23,15 +24,13 @@ def get_cifar10_dataloader(batch_size=128, num_workers=4):
         transform=transform,
     )
 
-    train_loader = DataLoader(
+    return DataLoader(
         train_dataset,
         batch_size=batch_size,
         shuffle=True,
         num_workers=num_workers,
         pin_memory=True,
     )
-
-    return train_loader
 
 
 def train(args):
@@ -86,7 +85,10 @@ if __name__ == "__main__":
     parser.add_argument("--log_every", type=int, default=100)
     parser.add_argument("--no_cuda", action="store_true")
     parser.add_argument("--timesteps", type=int, default=1000)
-    parser.add_argument("--out_dir", type=str, default="./data")
-    args = parser.parse_args()
 
+    # ✔ 统一为 app/models
+    default_out = Path(__file__).resolve().parent / "models"
+    parser.add_argument("--out_dir", type=str, default=str(default_out))
+
+    args = parser.parse_args()
     train(args)

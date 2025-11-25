@@ -1,6 +1,7 @@
 import base64
 import io
 from typing import Dict
+from pathlib import Path
 
 import torch
 from fastapi import APIRouter, HTTPException
@@ -16,9 +17,11 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 unet = SimpleUNet(in_channels=3, base_channels=64, time_dim=256)
 diffusion = DDPM(unet, timesteps=1000)
-DIFFUSION_AVAILABLE = False
-CKPT_PATH = "./data/diffusion_cifar10.pth"
 
+# ✔ 统一与 Energy / GAN / CNN 的路径一致
+CKPT_PATH = Path(__file__).resolve().parent / "models" / "diffusion_cifar10.pth"
+
+DIFFUSION_AVAILABLE = False
 try:
     state = torch.load(CKPT_PATH, map_location=DEVICE)
     diffusion.load_state_dict(state)
@@ -29,24 +32,19 @@ try:
 except FileNotFoundError:
     print(f"[Diffusion] WARNING: checkpoint {CKPT_PATH} not found.")
 
-
 denorm = transforms.Normalize(
     mean=[-1, -1, -1],
     std=[2, 2, 2],
 )
 
-
 def tensor_to_base64_grid(x: torch.Tensor) -> str:
-    x = denorm(x)  # [-1,1] -> [0,1]
+    x = denorm(x)
     grid = make_grid(x, nrow=int(x.size(0) ** 0.5), padding=2)
     grid = (grid.clamp(0, 1) * 255).permute(1, 2, 0).byte().cpu().numpy()
     img = Image.fromarray(grid)
-
     buf = io.BytesIO()
     img.save(buf, format="PNG")
-    img_bytes = buf.getvalue()
-    return base64.b64encode(img_bytes).decode("utf-8")
-
+    return base64.b64encode(buf.getvalue()).decode("utf-8")
 
 @router.post("/generate")
 async def generate_images(batch_size: int = 16) -> Dict:

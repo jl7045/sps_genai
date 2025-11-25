@@ -1,13 +1,16 @@
 import base64
 from io import BytesIO
+from pathlib import Path
+
 import torch
 from fastapi import APIRouter
 from PIL import Image
+
 from .gan_models import Generator
 
 router = APIRouter(prefix="/gan", tags=["gan"])
 
-MODEL_PATH = Path("app/models/gan_generator.pt")
+MODEL_PATH = Path(__file__).resolve().parent / "models" / "gan_generator.pt"
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
