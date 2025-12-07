@@ -12,4 +12,9 @@ dependencies = [
     "torchvision",
     "tqdm>=4.66.0",
     "python-multipart>=0.0.20",
+
+    # LLM 依赖
+    "transformers>=4.44.0",
+    "datasets>=2.20.0",
+    "accelerate>=1.0.0",
 ]
