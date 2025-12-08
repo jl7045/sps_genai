@@ -5,12 +5,12 @@ import torch
 
 app = FastAPI()
 
+LLM_MODEL_DIR = "./app/models/gpt2_squad_ft"
 
-# Directory of the fine-tuned GPT-2 model
-LLM_MODEL_DIR = "./models/gpt2_squad_ft"
-
-# Load tokenizer and model once at startup
 llm_tokenizer = AutoTokenizer.from_pretrained(LLM_MODEL_DIR)
+if llm_tokenizer.pad_token is None:
+    llm_tokenizer.pad_token = llm_tokenizer.eos_token
+
 llm_model = AutoModelForCausalLM.from_pretrained(LLM_MODEL_DIR)
 
 llm_device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -35,11 +35,6 @@ def read_root():
 
 @app.post("/generate", response_model=GenerateResponse)
 def generate_answer(req: GenerateRequest):
-    """
-    Generate an answer using the fine-tuned GPT-2 model.
-    The answer should follow the format:
-      "That is a great question." ... "Let me know if you have any other questions."
-    """
     prompt = f"Question: {req.question}\nContext: \nAnswer:"
 
     inputs = llm_tokenizer(
