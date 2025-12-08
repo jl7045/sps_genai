@@ -97,22 +97,21 @@ def main():
     # 5. 训练参数
     print(">>> Setting up training arguments...")
     training_args = TrainingArguments(
-        output_dir=OUTPUT_DIR,
-        overwrite_output_dir=True,
-        num_train_epochs=2,
-        per_device_train_batch_size=2,
-        per_device_eval_batch_size=2,
-        evaluation_strategy="epoch",
-        save_strategy="epoch",
-        logging_steps=50,
-        learning_rate=5e-5,
-        weight_decay=0.01,
-        warmup_steps=200,
-        save_total_limit=2,
-        fp16=torch.cuda.is_available(),
-        report_to=[],              # 不上报到 wandb 等
-        dataloader_num_workers=0,  # Windows 下避免 DataLoader 多进程死锁
-    )
+    output_dir=OUTPUT_DIR,
+    overwrite_output_dir=True,
+    num_train_epochs=2,
+    per_device_train_batch_size=2,
+    per_device_eval_batch_size=2,
+    logging_steps=50,
+    learning_rate=5e-5,
+    weight_decay=0.01,
+    warmup_steps=200,
+    save_total_limit=2,
+    fp16=torch.cuda.is_available(),
+    report_to=[],              # 不上报到 wandb 等
+    dataloader_num_workers=0,  # Windows 下避免 DataLoader 多进程死锁
+)
+
 
     # 6. 简单的 data collator
     def collator(features):
