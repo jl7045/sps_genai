@@ -1,13 +1,18 @@
 <<<<<<< HEAD
-# SPS GenAI - CIFAR10 Classifier
+## 📁 Fine-Tuned Model Files (NOT uploaded to GitHub)
 
-## Train
-```bash
-uv run python train_cifar10.py
-=======
-# SPS GenAI - CIFAR10 Classifier
+The fine-tuned GPT-2 model directory (app/models/gpt2_squad_ft/) contains several large files:
 
-## Train
-```bash
-uv run python train_cifar10.py
->>>>>>> 5eba60f6627c0b39a9a28073b2ea2c69feffe620
+model.safetensors (~500MB)
+
+tokenizer.json
+
+config.json
+
+checkpoints (checkpoint-xxxx/)
+
+GitHub does not allow uploading files larger than 100MB, so the complete fine-tuned model is stored externally.
+
+👉 You can download the full fine-tuned model here:
+
+✔ Google Drive:
